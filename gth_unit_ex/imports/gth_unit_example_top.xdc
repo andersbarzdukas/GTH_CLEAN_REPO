@@ -56,6 +56,20 @@
 set_property package_pin M5 [get_ports mgtrefclk1_x0y3_n]
 set_property package_pin M6 [get_ports mgtrefclk1_x0y3_p]
 
+set_property -dict {package_pin G10 IOSTANDARD LVDS} [get_ports hb_gtwiz_reset_clk_freerun_in_p]
+set_property -dict {package_pin F10 IOSTANDARD LVDS} [get_ports hb_gtwiz_reset_clk_freerun_in_n]
+set_property -dict {package_pin V2 IOSTANDARD LVDS} [get_ports gthrxp_in]
+set_property -dict {package_pin V1 IOSTANDARD LVDS} [get_ports gthrxn_in]
+#set_property -dict {package_pin W4 IOSTANDARD LVDS} [get_ports ch0_gthtxp_out]
+#set_property -dict {package_pin W3 IOSTANDARD LVDS} [get_ports ch0_gthtxn_out]
+set_property -dict {package_pin W4 IOSTANDARD LVDS} [get_ports gthtxp_out]
+set_property -dict {package_pin W3 IOSTANDARD LVDS} [get_ports gthtxn_out]
+
+set_property -dict {package_pin AD10 IOSTANDARD LVCMOS18} [get_ports hb_gtwiz_reset_all_in]
+set_property -dict {package_pin AF8 IOSTANDARD LVCMOS18} [get_ports link_down_latched_reset_in]
+set_property -dict {package_pin AD8 IOSTANDARD LVCMOS18} [get_ports link_status_out]
+set_property -dict {package_pin H23 IOSTANDARD LVCMOS18} [get_ports  link_down_latched_out]
+
 # Location constraints for other example design top-level ports
 # Note: uncomment the following set_property constraints and replace "<>" with appropriate pin locations for your board
 # ----------------------------------------------------------------------------------------------------------------------
