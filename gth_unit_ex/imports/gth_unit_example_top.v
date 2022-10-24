@@ -68,10 +68,11 @@ module gth_unit_example_top (
   output wire ch0_gthtxp_out,
 
   // User-provided ports for reset helper block(s)
-  input  wire hb_gtwiz_reset_clk_freerun_in,
+  input  wire hb_gtwiz_reset_clk_freerun_in_p,
+  input  wire hb_gtwiz_reset_clk_freerun_in_n,
   input  wire hb_gtwiz_reset_all_in,
 
-  // PRBS-based link status ports
+//   PRBS-based link status ports
   input  wire link_down_latched_reset_in,
   output wire link_status_out,
   output reg  link_down_latched_out = 1'b1
@@ -336,21 +337,101 @@ module gth_unit_example_top (
   wire hb_gtwiz_reset_all_buf_int;
   wire hb_gtwiz_reset_all_init_int;
   wire hb_gtwiz_reset_all_int;
-
-  IBUF ibuf_hb_gtwiz_reset_all_inst (
-    .I (hb_gtwiz_reset_all_in),
-    .O (hb_gtwiz_reset_all_buf_int)
-  );
+   
 
   assign hb_gtwiz_reset_all_int = hb_gtwiz_reset_all_buf_int || hb_gtwiz_reset_all_init_int || hb_gtwiz_reset_all_vio_int;
 
   // Globally buffer the free-running input clock
   wire hb_gtwiz_reset_clk_freerun_buf_int;
+  wire hb_gtwiz_reset_clk_freerun_in_buf;
 
-  BUFG bufg_clk_freerun_inst (
-    .I (hb_gtwiz_reset_clk_freerun_in),
-    .O (hb_gtwiz_reset_clk_freerun_buf_int)
+  IBUFDS bufg_clk_freerun_inst (
+    .I (hb_gtwiz_reset_clk_freerun_in_p),
+    .IB (hb_gtwiz_reset_clk_freerun_in_n),
+    .O (hb_gtwiz_reset_clk_freerun_in_buf)
   );
+  
+  BUFG bufg_clk_wiz(
+    .I (hb_gtwiz_reset_clk_freerun_in_buf),
+    .O (hb_gtwiz_reset_clk_freerun_buf_int)
+   );
+
+  wire [31:0] dout_norm_tx;
+  wire [31:0] dout_slow_tx;
+  wire [63:0] dout_doub_tx;
+  wire [31:0] dout_norm_rx;
+  wire [31:0] dout_slow_rx;
+  wire [63:0] dout_doub_rx;
+  
+  ila_0 ila_01(
+    .clk (gtwiz_userclk_tx_usrclk2_int),
+//    .clk (mgtrefclk1_x0y3_int),
+    .probe0 (hb0_gtwiz_userdata_tx_int),
+    .probe1 (hb0_gtwiz_userdata_rx_int),
+    .probe2 (gtwiz_reset_tx_done_int),
+    .probe3 (gtwiz_reset_rx_done_int),
+    .probe4 (prbs_error_any_async),
+    .probe5 (prbs_error_any_sync),
+    .probe6 (link_down_latched_reset_sync),
+    .probe7 (rxbyteisaligned_int),
+    .probe8 (rxbyterealign_int),
+    .probe9 (rxcommadet_int), 
+    .probe10 (ch0_rxctrl2_int),
+    .probe11 (ch0_rxctrl0_int),
+    .probe12 (ch0_rxctrl1_int),
+    .probe13 (ch0_rxctrl3_int),
+    .probe14 (dout_norm_rx),
+    .probe15 (dout_slow_rx),
+    .probe16 (dout_doub_rx)
+  );
+
+  ila_0 ila_02(
+    .clk (gtwiz_userclk_rx_usrclk2_int),
+    .probe0 (hb0_gtwiz_userdata_tx_int),
+    .probe1 (hb0_gtwiz_userdata_rx_int),
+    .probe2 (gtwiz_reset_tx_done_int),
+    .probe3 (gtwiz_reset_rx_done_int),
+    .probe4 (prbs_error_any_async),
+    .probe5 (prbs_error_any_sync),
+    .probe6 (link_down_latched_reset_sync),
+    .probe7 (rxbyteisaligned_int),
+    .probe8 (rxbyterealign_int),
+    .probe9 (rxcommadet_int), 
+    .probe10 (ch0_rxctrl2_int),
+    .probe11 (ch0_rxctrl0_int),
+    .probe12 (ch0_rxctrl1_int),
+    .probe13 (ch0_rxctrl3_int),
+    .probe14 (dout_norm_tx),
+    .probe15 (dout_slow_tx),
+    .probe16 (dout_doub_tx)
+  );
+  
+  
+
+  
+//  FIFO_HW FIFO_HW_0(
+//    .wr_clk(gtwiz_userclk_rx_usrclk2_int),
+//    .rd_clk(gtwiz_userclk_rx_usrclk2_int),
+//    //.rd_clk(gtwiz_userclk_tx_usrclk2_int),
+//    .din(hb0_gtwiz_userdata_rx_int),
+//    .rd_en(1'b1),
+//    .wr_en(1'b1),
+//    .dout_norm(dout_norm_tx),
+//    .dout_slow(dout_slow_tx),
+//    .dout_doub(dout_doub_tx)
+//  );
+  
+// FIFO_HW FIFO_HW_1 (
+//    .wr_clk(gtwiz_userclk_tx_usrclk2_int),
+//    .rd_clk(gtwiz_userclk_tx_usrclk2_int),
+//    //.rd_clk(gtwiz_userclk_rx_usrclk2_int),
+//    .din(hb0_gtwiz_userdata_rx_int),
+//    .rd_en(1'b1),
+//    .wr_en(1'b1),
+//    .dout_norm(dout_norm_rx),
+//    .dout_slow(dout_slow_rx),
+//    .dout_doub(dout_doub_rx)
+//  );
 
   // Instantiate a differential reference clock buffer for each reference clock differential pair in this configuration,
   // and assign the single-ended output of each differential reference clock buffer to the appropriate PLL input signal
@@ -428,6 +509,16 @@ module gth_unit_example_top (
 
   // PRBS match and related link management
   // -------------------------------------------------------------------------------------------------------------------
+  
+  //Add debug and matching signals
+  //reg[63:0] prbs_count = 64b'0;
+  //reg
+  //  counter prbs_match_count(
+  //  .cnt_in (prbs_count_wire),
+  //  .check (prbs_match_int),
+  //  .cnt_out (prbs_count)
+  //  );
+    
 
   // Perform a bitwise NAND of all PRBS match indicators, creating a combinatorial indication of any PRBS mismatch
   // across all transceiver channels
