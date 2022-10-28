@@ -187,8 +187,13 @@ module gth_unit_prbs_any(RST, CLK, DATA_IN, EN, DATA_OUT);
          DATA_OUT <= {NBITS{1'b1}};
       end
       else if(EN == 1'b 1) begin
-         DATA_OUT <= prbs_xor_b;
-         prbs_reg <= prbs[NBITS];
+         //DATA_OUT <= prbs_xor_b;
+         //prbs_reg <= prbs[NBITS];
+         //if(prbs_reg == {NBITS{1'b1}}) begin 
+         //   prbs_reg <= {POLY_LENGHT{1'b0}}; 
+         //end
+         prbs_reg <= prbs_reg + 1'b1;
+         DATA_OUT <= prbs_reg;
       end
   end
 

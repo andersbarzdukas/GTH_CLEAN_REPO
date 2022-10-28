@@ -122,7 +122,7 @@ module gth_unit_example_stimulus_8b10b (
       end
       else begin
         txdata_reg   <= txdata_char;
-        txctrl2_reg  <= 8'b0000_1111;
+        txctrl2_reg  <= 8'b0000_0001;
         prbs_slt_ctr <= prbs_slt_ctr + 10'd1;
       end
     end

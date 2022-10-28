@@ -356,12 +356,15 @@ module gth_unit_example_top (
     .O (hb_gtwiz_reset_clk_freerun_buf_int)
    );
 
-  wire [31:0] dout_norm_tx;
-  wire [31:0] dout_slow_tx;
-  wire [63:0] dout_doub_tx;
-  wire [31:0] dout_norm_rx;
-  wire [31:0] dout_slow_rx;
-  wire [63:0] dout_doub_rx;
+  wire [31:0] dout_norm_totx;
+  wire [31:0] dout_slow_totx;
+  wire [63:0] dout_doub_totx;
+  wire [31:0] dout_norm_torx;
+  wire [31:0] dout_slow_torx;
+  wire [63:0] dout_doub_torx;
+  
+
+  
   
   ila_0 ila_01(
     .clk (gtwiz_userclk_tx_usrclk2_int),
@@ -375,14 +378,15 @@ module gth_unit_example_top (
     .probe6 (link_down_latched_reset_sync),
     .probe7 (rxbyteisaligned_int),
     .probe8 (rxbyterealign_int),
-    .probe9 (rxcommadet_int), 
-    .probe10 (ch0_rxctrl2_int),
+    .probe9 (rxcommadet_int),
+    .probe10 (link_status_out), 
     .probe11 (ch0_rxctrl0_int),
     .probe12 (ch0_rxctrl1_int),
-    .probe13 (ch0_rxctrl3_int),
-    .probe14 (dout_norm_rx),
-    .probe15 (dout_slow_rx),
-    .probe16 (dout_doub_rx)
+    .probe13 (ch0_rxctrl2_int),
+    .probe14 (ch0_txctrl0_int),
+    .probe15 (dout_norm_totx),
+    .probe16 (bit_error),
+    .probe17 (bit_correct)
   );
 
   ila_0 ila_02(
@@ -397,41 +401,45 @@ module gth_unit_example_top (
     .probe7 (rxbyteisaligned_int),
     .probe8 (rxbyterealign_int),
     .probe9 (rxcommadet_int), 
-    .probe10 (ch0_rxctrl2_int),
+    .probe10 (link_status_out),
     .probe11 (ch0_rxctrl0_int),
     .probe12 (ch0_rxctrl1_int),
-    .probe13 (ch0_rxctrl3_int),
-    .probe14 (dout_norm_tx),
-    .probe15 (dout_slow_tx),
-    .probe16 (dout_doub_tx)
+    .probe13 (ch0_rxctrl2_int),
+    .probe14 (ch0_txctrl0_int),
+    .probe15 (dout_norm_torx),
+    .probe16 (bit_error),
+    .probe17 (bit_correct)
   );
   
   
 
   
-//  FIFO_HW FIFO_HW_0(
-//    .wr_clk(gtwiz_userclk_rx_usrclk2_int),
-//    .rd_clk(gtwiz_userclk_rx_usrclk2_int),
-//    //.rd_clk(gtwiz_userclk_tx_usrclk2_int),
-//    .din(hb0_gtwiz_userdata_rx_int),
-//    .rd_en(1'b1),
-//    .wr_en(1'b1),
-//    .dout_norm(dout_norm_tx),
-//    .dout_slow(dout_slow_tx),
-//    .dout_doub(dout_doub_tx)
-//  );
+  FIFO_HW FIFO_HW_0(
+    .wr_clk(gtwiz_userclk_rx_usrclk2_int),
+    .rd_clk(gtwiz_userclk_tx_usrclk2_int),
+    //.rd_clk(gtwiz_userclk_tx_usrclk2_int),
+    .din(hb0_gtwiz_userdata_rx_int),
+    .rd_en(hb0_gtwiz_userclk_rx_active_int),
+    .wr_en(hb0_gtwiz_userclk_rx_active_int),
+    .dout_norm(dout_norm_totx),
+    .dout_slow(dout_slow_totx),
+    .dout_doub(dout_doub_totx)
+  );
   
-// FIFO_HW FIFO_HW_1 (
-//    .wr_clk(gtwiz_userclk_tx_usrclk2_int),
-//    .rd_clk(gtwiz_userclk_tx_usrclk2_int),
-//    //.rd_clk(gtwiz_userclk_rx_usrclk2_int),
-//    .din(hb0_gtwiz_userdata_rx_int),
-//    .rd_en(1'b1),
-//    .wr_en(1'b1),
-//    .dout_norm(dout_norm_rx),
-//    .dout_slow(dout_slow_rx),
-//    .dout_doub(dout_doub_rx)
-//  );
+ FIFO_HW FIFO_HW_1 (
+    .wr_clk(gtwiz_userclk_tx_usrclk2_int),
+    .rd_clk(gtwiz_userclk_rx_usrclk2_int),
+    //.rd_clk(gtwiz_userclk_rx_usrclk2_int),
+    .din(hb0_gtwiz_userdata_tx_int),
+    .rd_en(hb0_gtwiz_userclk_rx_active_int),
+    .wr_en(hb0_gtwiz_userclk_rx_active_int),
+    .dout_norm(dout_norm_torx),
+    .dout_slow(dout_slow_torx),
+    .dout_doub(dout_doub_torx)
+  );
+  
+
+  
 
   // Instantiate a differential reference clock buffer for each reference clock differential pair in this configuration,
   // and assign the single-ended output of each differential reference clock buffer to the appropriate PLL input signal
@@ -506,6 +514,41 @@ module gth_unit_example_top (
     .rxdata_in                   (hb0_gtwiz_userdata_rx_int),
     .prbs_match_out              (prbs_match_int[0])
   );
+  
+  //Implemented counter
+  parameter ERR_BITS=64; 
+  reg [ERR_BITS - 1:0] bit_error;
+  reg [ERR_BITS - 1:0] bit_correct;
+  reg [1:0] upCtrlBit = 2'b00;
+  
+  //ch0_rxctrl0_int
+  
+   always @(posedge hb0_gtwiz_userdata_rx_int) begin
+
+      
+   
+      if(hb_gtwiz_reset_all_vio_int == 1'b1 || link_status_out==1'b0) begin
+         bit_error <= {ERR_BITS{1'b0}};
+         bit_correct <= {ERR_BITS{1'b0}};
+      end
+      else if(upCtrlBit[1] == 1'b1) begin
+         case(prbs_match_int)
+            1'b1 : bit_correct = bit_correct + 1'b1;
+            1'b0 : bit_error = bit_error + 1'b1;
+            default bit_correct = bit_correct;
+         endcase
+      end
+      
+      if(upCtrlBit==2'b00 && ch0_rxctrl0_int[3:0]==1'h1) begin
+        upCtrlBit = 2'b01;
+      end 
+      else if(upCtrlBit==2'b01 && ch0_rxctrl0_int[3:0]==1'h0 ) begin
+        upCtrlBit = 2'b11;
+      end
+      else if(upCtrlBit == 2'b11) begin
+        upCtrlBit = 2'b00;
+      end 
+   end
 
   // PRBS match and related link management
   // -------------------------------------------------------------------------------------------------------------------
